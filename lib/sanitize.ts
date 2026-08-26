@@ -1,29 +1,14 @@
-import DOMPurify from "isomorphic-dompurify";
-
 /**
- * Fallback regex-based sanitizer that strips HTML tags, scripts, event handlers,
- * and malicious pseudo-protocols when DOMPurify/JSDOM is unavailable.
+ * Serverless-safe Input Sanitizer for Cross-Site Scripting (XSS) Prevention.
+ *
+ * Implements a pure TypeScript multi-pass sanitization pipeline that strips
+ * executable script tags, styles, event handlers, javascript/vbscript protocols,
+ * and dangerous HTML tags with zero external C++ or JSDOM dependencies.
  */
-function fallbackSanitize(str: string): string {
-  return str
-    // Strip script and style blocks entirely
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
-    // Strip all other HTML tags
-    .replace(/<[^>]*>/g, "")
-    // Strip dangerous attributes & event handlers
-    .replace(/on\w+\s*=\s*(?:'[^']*'|"[^"]*"|[^\s>]+)/gi, "")
-    // Strip dangerous pseudo-protocols
-    .replace(/javascript\s*:/gi, "")
-    .replace(/vbscript\s*:/gi, "")
-    .replace(/data\s*:\s*text\/html/gi, "")
-    // Strip HTML comments
-    .replace(/<!--[\s\S]*?-->/g, "");
-}
 
 /**
  * Sanitizes a string input by removing all HTML tags, script entities,
- * dangerous characters, and control characters to prevent Cross-Site Scripting (XSS).
+ * dangerous characters, and control characters.
  *
  * @param input Raw untrusted string from user input
  * @returns Cleaned and sanitized plain text
@@ -33,35 +18,30 @@ export function sanitizeInput(input: string | undefined | null): string {
     return "";
   }
 
-  let purified = input;
-
-  // 1. Attempt isomorphic DOMPurify sanitization safely
-  try {
-    if (typeof DOMPurify !== "undefined" && typeof DOMPurify.sanitize === "function") {
-      purified = DOMPurify.sanitize(input, {
-        ALLOWED_TAGS: [],
-        ALLOWED_ATTR: [],
-        FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "svg", "img", "link"],
-        FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "javascript:"],
-      });
-    } else {
-      purified = fallbackSanitize(input);
-    }
-  } catch {
-    purified = fallbackSanitize(input);
-  }
-
-  // Double-pass regex check to guarantee clean text
-  purified = fallbackSanitize(purified);
-
-  // 2. Normalize and strip non-printable/control characters (ASCII 0-31 except tab/newline)
-  const normalized = purified
+  let purified = input
+    // 1. Remove script and style tags and their entire contents
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, "")
+    .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, "")
+    .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, "")
+    // 2. Remove all remaining HTML tags
+    .replace(/<[^>]*>/g, "")
+    // 3. Remove inline event handlers (onerror=, onclick=, onload=, etc.)
+    .replace(/on\w+\s*=\s*(?:'[^']*'|"[^"]*"|[^\s>]+)/gi, "")
+    // 4. Remove dangerous pseudo-protocols
+    .replace(/javascript\s*:/gi, "")
+    .replace(/vbscript\s*:/gi, "")
+    .replace(/data\s*:\s*text\/html/gi, "")
+    // 5. Remove HTML comments
+    .replace(/<!--[\s\S]*?-->/g, "")
+    // 6. Strip non-printable/control characters (ASCII 0-31 except tab/newline)
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
-    // Collapse excessive whitespace
+    // 7. Collapse excessive whitespace
     .replace(/\s{3,}/g, "  ")
     .trim();
 
-  return normalized;
+  return purified;
 }
 
 /**
@@ -87,4 +67,3 @@ export function escapeHtml(str: string): string {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
-
