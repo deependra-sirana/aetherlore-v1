@@ -61,9 +61,8 @@ flowchart TD
     end
 
     subgraph CoreEngine["AI Narrative Synthesis Engine"]
-        Gemini["Google Gemini 1.5 Flash (via @google/generative-ai)"]
+        Gemini["Google Gemini 2.5 Flash (via @google/generative-ai)"]
         OpenAI["OpenAI GPT-4o-Mini (via openai SDK)"]
-        Fallback["AetherLore Contextual Simulation Engine (Offline Safe)"]
     end
 
     User -->|Submits Character Form| UI
