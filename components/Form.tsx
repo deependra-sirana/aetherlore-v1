@@ -200,27 +200,41 @@ export const Form: React.FC<FormProps> = ({ onSuccess, onLoadingChange, isLoadin
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get("content-type") || "";
+      let data: unknown = null;
+
+      if (contentType.includes("application/json")) {
+        try {
+          data = await response.json();
+        } catch {
+          data = null;
+        }
+      }
 
       if (!response.ok) {
-        const errorData = data as ApiErrorResponse;
+        const errorData = (data && typeof data === "object") ? (data as ApiErrorResponse) : null;
         if (response.status === 429) {
           setServerError(
-            `Rate Limit Exceeded: ${errorData.error || "Please wait before submitting again."}`
+            `Rate Limit Exceeded: ${errorData?.error || "Too many requests. Please wait a moment before submitting again."}`
           );
-        } else if (response.status === 422 && errorData.details && typeof errorData.details === "object") {
+        } else if (response.status === 422 && errorData?.details && typeof errorData.details === "object") {
           setValidationErrors(errorData.details as Record<string, string[]>);
-          setServerError(errorData.error);
+          setServerError(errorData.error || "Please correct the form fields highlighted below.");
         } else {
-          setServerError(errorData.error || "Failed to generate narrative.");
+          setServerError(errorData?.error || `Server returned error (${response.status}). Please try again.`);
         }
+        return;
+      }
+
+      if (!data) {
+        setServerError("Received empty response from server. Please retry.");
         return;
       }
 
       onSuccess(data as NarrativeResponse);
     } catch (err) {
       console.error("Network or execution error:", err);
-      setServerError("Network error. Failed to reach the security synthesis gateway.");
+      setServerError("Network error. Failed to reach the security synthesis gateway. Please check your connection.");
     } finally {
       onLoadingChange(false);
     }
