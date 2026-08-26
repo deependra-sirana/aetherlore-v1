@@ -47,7 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAuditModal }) => {
           </button>
 
           <a
-            href="https://github.com"
+            href="https://github.com/deependra-sirana/aetherlore-v1"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-surface-200/80 text-gray-300 border border-gray-700 hover:text-white hover:border-gray-600 transition-colors"

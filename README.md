@@ -14,7 +14,7 @@
 
 Deploy your own instance of the **Secure AI Game Narrative Generator** to Vercel with zero configuration:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyour-username%2Fsecure-ai-game-narrative-generator&env=GEMINI_API_KEY,OPENAI_API_KEY,AI_PROVIDER,RATE_LIMIT_MAX_REQUESTS,RATE_LIMIT_WINDOW_SECONDS&envDescription=Server-side%20AI%20and%20Rate%20Limiting%20Credentials&project-name=secure-ai-game-lore&repository-name=secure-ai-game-lore)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fdeependra-sirana%2Faetherlore-v1&env=GEMINI_API_KEY,OPENAI_API_KEY,AI_PROVIDER,RATE_LIMIT_MAX_REQUESTS,RATE_LIMIT_WINDOW_SECONDS&envDescription=Server-side%20AI%20and%20Rate%20Limiting%20Credentials&project-name=aetherlore-v1&repository-name=aetherlore-v1)
 
 ### Required Environment Variables for Vercel
 
@@ -130,8 +130,8 @@ The application enforces a multi-layered **Defense-in-Depth** model designed aro
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/secure-ai-game-narrative-generator.git
-cd secure-ai-game-narrative-generator
+git clone https://github.com/deependra-sirana/aetherlore-v1.git
+cd aetherlore-v1
 ```
 
 ### 2. Install Dependencies
