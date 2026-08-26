@@ -13,6 +13,7 @@
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
     "@tailwindcss/typography": "^0.5.15",
+    "@vercel/analytics": "^2.0.1",
     "clsx": "^2.1.1",
     "isomorphic-dompurify": "^2.16.0",
     "lucide-react": "^0.453.0",
