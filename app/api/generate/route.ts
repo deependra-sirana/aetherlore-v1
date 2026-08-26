@@ -3,7 +3,7 @@ import { CharacterInputSchema, ApiErrorResponse } from "@/lib/types";
 import { sanitizeInput, sanitizeStringArray } from "@/lib/sanitize";
 import { scanAndShieldPrompt } from "@/lib/security";
 import { getClientIp, checkRateLimit } from "@/lib/rate-limiter";
-import { generateNarrative, generateContextualFallbackLore } from "@/lib/ai-provider";
+import { generateNarrative } from "@/lib/ai-provider";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
       const clientIp = getClientIp(req);
       rateLimit = checkRateLimit(clientIp);
     } catch (rlError) {
-      console.error("Rate limiter evaluation failed:", rlError);
+      console.error("Rate limiter evaluation error:", rlError);
     }
 
     const rateLimitHeaders = {
@@ -113,10 +113,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. Pre-Validation Sanitization (XSS Mitigation)
+    // 4. Pre-Validation Sanitization (XSS Mitigation) & Variable Extraction
     const rawInput = (parsedJson && typeof parsedJson === "object") ? (parsedJson as Record<string, unknown>) : {};
     const sanitizedInputCandidate = {
-      name: sanitizeInput(typeof rawInput.name === "string" ? rawInput.name : "Operative"),
+      name: sanitizeInput(typeof rawInput.name === "string" ? rawInput.name : ""),
       archetype: rawInput.archetype,
       genre: rawInput.genre,
       format: rawInput.format,
@@ -147,57 +147,38 @@ export async function POST(req: NextRequest) {
     const validatedInput = validationResult.data;
 
     // 6. Prompt Injection Defense & Heuristic Scanner
-    let scanResult;
-    try {
-      scanResult = scanAndShieldPrompt(validatedInput);
-    } catch (shieldError) {
-      console.error("Prompt shielding scanner error:", shieldError);
-      scanResult = {
-        isSafe: true,
-        confidence: "NONE" as const,
-        detectedPatterns: [],
-        neutralizedBackstory: validatedInput.backstoryPrompt || "",
-      };
-    }
+    const scanResult = scanAndShieldPrompt(validatedInput);
 
-    // 7. Core AI Execution with Comprehensive Try/Catch
-    let narrativeResult;
+    // 7. Core Live AI Execution (No mock / No static fallback)
     try {
-      narrativeResult = await generateNarrative(validatedInput, scanResult);
+      const narrativeResult = await generateNarrative(validatedInput, scanResult);
+
+      return NextResponse.json(narrativeResult, {
+        status: 200,
+        headers: {
+          ...rateLimitHeaders,
+          "Cache-Control": "no-store, max-age=0",
+        },
+      });
     } catch (aiExecutionError) {
       const rawErrorMessage = aiExecutionError instanceof Error ? aiExecutionError.message : String(aiExecutionError);
       const rawErrorStack = aiExecutionError instanceof Error ? aiExecutionError.stack : undefined;
-      
+
       console.error("RAW AI EXECUTION ERROR IN /api/generate:", rawErrorMessage, rawErrorStack);
 
-      // Attempt high-fidelity fallback generation first before failing
-      try {
-        narrativeResult = generateContextualFallbackLore(validatedInput, scanResult, 50);
-      } catch (fallbackError) {
-        console.error("CRITICAL: Even fallback lore generation failed:", fallbackError);
-        return NextResponse.json(
-          {
-            error: `AI Provider failed: ${rawErrorMessage}`,
-            code: "AI_PROVIDER_FAILED",
-            details: rawErrorMessage,
-            timestamp,
-          },
-          {
-            status: 500,
-            headers: rateLimitHeaders,
-          }
-        );
-      }
+      return NextResponse.json(
+        {
+          error: `AI Provider failed: ${rawErrorMessage}`,
+          code: "AI_PROVIDER_FAILED",
+          details: rawErrorMessage,
+          timestamp,
+        },
+        {
+          status: 500,
+          headers: rateLimitHeaders,
+        }
+      );
     }
-
-    // 8. Return response with headers
-    return NextResponse.json(narrativeResult, {
-      status: 200,
-      headers: {
-        ...rateLimitHeaders,
-        "Cache-Control": "no-store, max-age=0",
-      },
-    });
   } catch (criticalError) {
     const rawErrorMessage = criticalError instanceof Error ? criticalError.message : String(criticalError);
     const rawErrorStack = criticalError instanceof Error ? criticalError.stack : undefined;
