@@ -61,7 +61,7 @@ flowchart TD
     end
 
     subgraph CoreEngine["AI Narrative Synthesis Engine"]
-        Gemini["Google Gemini 3.6 Flash (via @google/generative-ai)"]
+        Gemini["Google Gemini 3.7 Flash (via @google/generative-ai)"]
         OpenAI["OpenAI GPT-4o-Mini (via openai SDK)"]
     end
 

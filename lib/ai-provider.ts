@@ -44,7 +44,7 @@ export async function generateNarrative(
     try {
       const genAI = new GoogleGenerativeAI(geminiApiKey as string);
       const model = genAI.getGenerativeModel({
-        model: "gemini-3.6-flash",
+        model: "gemini-3.7-flash",
         systemInstruction: systemInstruction,
         generationConfig: {
           responseMimeType: "application/json",
@@ -88,7 +88,7 @@ export async function generateNarrative(
           injectionConfidence: scanResult.confidence,
           filteredPatterns: scanResult.detectedPatterns,
           processingLatencyMs: latencyMs,
-          provider: "Google Gemini 3.6 Flash (Live)",
+          provider: "Google Gemini 3.7 Flash (Live)",
         },
       };
     } catch (geminiError) {
